@@ -84,6 +84,9 @@ def ui():
                 scale.MajorScale if modality == 'Major' else
                 scale.MinorScale if modality == 'Minor' else
                 scale.MixolydianScale if modality == 'Mixolydian' else
+                scale.DorianScale if modality == 'Dorian' else
+                scale.LydianScale if modality == 'Lydian' else
+                scale.PhrygianScale if modality == 'Phrygian' else
                 None
             )
             generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2,bpm=bpm)
@@ -96,7 +99,7 @@ def ui():
     global tonic_select, modality_select, bar_count, bpm_entry
 
     notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-    modality = ['Major', 'Minor', 'Mixolydian']
+    modality = ['Major', 'Minor', 'Lydian', 'Dorian', 'Phrygian', 'Mixolydian']
 
     root = tk.Tk()
     root.geometry("350x350")
