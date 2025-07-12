@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import ttk
 from markov import RhthymController
+import sys
 
 def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScale,num_bars=8,start_octave=4,octave_range=1,phrase_length_bars=2,bpm=100):
     sc = scaleType(tonic)
@@ -74,19 +75,23 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
 
 def ui():
     def btn_callback():
-        tonic = tonic_select.get()
-        modality = modality_select.get()
-        bars = bar_count.get()
-        bpm = bpm_entry.get()
-        scale_type = (
-            scale.MajorScale if modality == 'Major' else
-            scale.MinorScale if modality == 'Minor' else
-            scale.MixolydianScale if modality == 'Mixolydian' else
-            None
-        )
-        generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2,bpm=bpm)
-        showinfo('Success', 'The melody has been generated as a MIDI file. Please use a compatible MIDI editor/Digital '
-                            'Audio Workstation to listen/edit the file.')
+        try:
+            tonic = tonic_select.get()
+            modality = modality_select.get()
+            bars = bar_count.get()
+            bpm = bpm_entry.get()
+            scale_type = (
+                scale.MajorScale if modality == 'Major' else
+                scale.MinorScale if modality == 'Minor' else
+                scale.MixolydianScale if modality == 'Mixolydian' else
+                None
+            )
+            generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2,bpm=bpm)
+            showinfo('Success', 'The melody has been generated as a MIDI file. Please use a compatible MIDI editor/Digital '
+                                'Audio Workstation to listen/edit the file.')
+        except Exception as e:
+            showinfo('Error!', str(e))
+            raise e
 
     global tonic_select, modality_select, bar_count, bpm_entry
 
