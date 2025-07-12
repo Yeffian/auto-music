@@ -5,7 +5,7 @@ from tkinter.messagebox import showinfo
 from tkinter import ttk
 from markov import RhthymController
 
-def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScale,num_bars=8,start_octave=4,octave_range=1,phrase_length_bars=2,):
+def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScale,num_bars=8,start_octave=4,octave_range=1,phrase_length_bars=2,bpm=100):
     sc = scaleType(tonic)
 
     # sort by MIDI value
@@ -19,8 +19,8 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
     scale_notes.sort(key=lambda p: p.midi)  # ascending order
     num_scale_notes = len(scale_notes)
 
-    mark = tempo.MetronomeMark(number=160)
     melody = stream.Part()
+    mark = tempo.MetronomeMark(number=bpm)
     melody.insert(0, mark)
     melody.append(meter.TimeSignature("4/4"))
 
@@ -77,23 +77,24 @@ def ui():
         tonic = tonic_select.get()
         modality = modality_select.get()
         bars = bar_count.get()
+        bpm = bpm_entry.get()
         scale_type = (
             scale.MajorScale if modality == 'Major' else
             scale.MinorScale if modality == 'Minor' else
             scale.MixolydianScale if modality == 'Mixolydian' else
             None
         )
-        generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2)
+        generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2,bpm=bpm)
         showinfo('Success', 'The melody has been generated as a MIDI file. Please use a compatible MIDI editor/Digital '
                             'Audio Workstation to listen/edit the file.')
 
-    global tonic_select, modality_select, bar_count
+    global tonic_select, modality_select, bar_count, bpm_entry
 
     notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     modality = ['Major', 'Minor', 'Mixolydian']
 
     root = tk.Tk()
-    root.geometry("350x300")
+    root.geometry("350x350")
     root.wm_title("Music Generator")
 
     w = tk.Label(root, text='Algorithmic Music Generator', font=('Helvetica', 15, 'bold'), pady=20)
@@ -113,18 +114,22 @@ def ui():
     modality_select.set("Select modality")
     modality_select.grid(row=2, column=1, padx=10, pady=10, sticky='w')
 
-    generate_btn = tk.Button(root, text='Generate', command=btn_callback)
-    generate_btn.grid(row=3, column=0, columnspan=2, pady=3)
-
     label3 = tk.Label(root, text='Bar Count:')
     label3.grid(row=3, column=0, padx=10, pady=5, sticky='e')
 
     bar_count = tk.Entry(root, width=22)
-    bar_count.insert(0, "8")  # Default value
+    bar_count.insert(0, "8")
     bar_count.grid(row=3, column=1, padx=10, pady=5, sticky='w')
 
+    label4 = tk.Label(root, text='Tempo:')
+    label4.grid(row=4, column=0, padx=10, pady=5, sticky='e')
+
+    bpm_entry = tk.Entry(root, width=22)
+    bpm_entry.insert(0, "120")
+    bpm_entry.grid(row=4, column=1, padx=10, pady=5, sticky='w')
+
     generate_btn = tk.Button(root, text='Generate', command=btn_callback)
-    generate_btn.grid(row=4, column=0, columnspan=2, pady=10)
+    generate_btn.grid(row=5, column=0, columnspan=2, pady=15)
 
     root.mainloop()
 
