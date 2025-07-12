@@ -1,77 +1,75 @@
-from music21 import stream, note, scale, meter
+from music21 import stream, note, scale, meter, tempo
 import random
 import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import ttk
 from markov import RhthymController
 
+def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScale,num_bars=8,start_octave=4,octave_range=1,phrase_length_bars=2,):
+    sc = scaleType(tonic)
 
+    # sort by MIDI value
+    scale_notes = []
+    for octave in range(start_octave, start_octave + octave_range):
+        for degree in range(1, 8):  # scale degrees 1–7
+            p = sc.pitchFromDegree(degree)
+            p.octave = octave
+            scale_notes.append(p)
 
-def generate_markov_melody_with_phrases(
-        tonic='C',
-        scaleType=scale.MajorScale,
-        num_notes=16,
-        start_octave=4,
-        octave_range=1,
-        phrase_length_bars=2
-):
-    beat_probabilities = {
+    scale_notes.sort(key=lambda p: p.midi)  # ascending order
+    num_scale_notes = len(scale_notes)
+
+    mark = tempo.MetronomeMark(number=160)
+    melody = stream.Part()
+    melody.insert(0, mark)
+    melody.append(meter.TimeSignature("4/4"))
+
+    beat_probs = {
         1: {0.5: 0.45, 0.25: 0.4, 1: 0.1, -1: 0.05},
         0.5: {0.25: 0.4, 0.5: 0.25, 1: 0.15, -1: 0.2},
         0.25: {0.25: 0.5, 0.5: 0.25, 1: 0.05, -1: 0.2},
         -1: {0.25: 0.5, 0.5: 0.3, 1: 0.1, -1: 0.1}
     }
-    beat_chain = RhthymController(beat_probabilities)
-    beat_sequence = beat_chain.produce_complete(num_notes)
 
-    sc = scaleType(tonic)
-    scale_notes = []
-    for octave in range(start_octave, start_octave + octave_range):
-        for degree in range(1, 8):
-            p = sc.pitchFromDegree(degree)
-            p.octave = octave
-            scale_notes.append(p.nameWithOctave)
+    beat_chain = RhthymController(beat_probs)
 
-    melody = stream.Part()
-    melody.append(meter.TimeSignature("4/4"))
+    # Initialize contour position
+    current_idx = len(scale_notes) // 2  # start in middle
+    going_up = random.choice([True, False])  # first direction in wave
 
-    current_measure = stream.Measure()
-    current_duration = 0.0
-    bar_number = 1
-    for i, duration in enumerate(beat_sequence):
-        length = 1.0 if duration == 1 else abs(duration)
-        if current_duration + length > 4.0:
-            # Pad with rest if measure not full
-            if current_duration < 4.0:
-                pad_rest = note.Rest(quarterLength=4.0 - current_duration)
-                current_measure.append(pad_rest)
+    for bar_num in range(num_bars):
+        m = stream.Measure(number=bar_num + 1)
+        bar_rhythm = beat_chain.generate_bar(start=1, max_beats=4.0)
 
-            melody.append(current_measure)
-            bar_number += 1
-            current_measure = stream.Measure(number=bar_number)
-            current_duration = 0.0
+        for dur in bar_rhythm:
+            length = abs(dur)
 
-        if duration == -1:
-            n = note.Rest(quarterLength=length)
-        else:
-            pitch = random.choice(scale_notes)
-            n = note.Note(pitch, quarterLength=length)
-        current_measure.append(n)
-        current_duration += length
+            if dur == -1:
+                n = note.Rest(quarterLength=length)
+            else:
+                # wave contour: move 1–2 steps in current direction
+                step = random.choice([1, 2, 4])
+                if going_up:
+                    current_idx = min(current_idx + step, num_scale_notes - 1)
+                else:
+                    current_idx = max(current_idx - step, 0)
 
-    if current_duration < 4.0:
-        current_measure.append(note.Rest(quarterLength=4.0 - current_duration))
-    melody.append(current_measure)
+                pitch_obj = scale_notes[current_idx]
+                n = note.Note(pitch_obj.nameWithOctave, quarterLength=length)
 
-    # End on the tonic at the end of each phrase
-    measures = list(melody.getElementsByClass(stream.Measure))
-    for i in range(phrase_length_bars - 1, len(measures), phrase_length_bars):
-        tonic_note = note.Note(tonic + str(start_octave), quarterLength=1.0)
-        measures[i].append(tonic_note)
+                # random direction
+                going_up = random.choice([True, False])
 
-    # Show or return
-    melody.show('midi')
+            m.append(n)
+
+        # End of phrase → add tonic
+        if (bar_num + 1) % phrase_length_bars == 0:
+            m.append(note.Note(tonic + str(start_octave), quarterLength=1.0))
+
+        melody.append(m)
+
     melody.show('text')
+    melody.show('midi')
 
 
 def ui():
@@ -85,7 +83,7 @@ def ui():
             scale.MixolydianScale if modality == 'Mixolydian' else
             None
         )
-        generate_markov_melody_with_phrases(tonic=tonic, scaleType=scale_type, num_notes=24, phrase_length_bars=int(bars),start_octave=4,octave_range=2)
+        generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2)
         showinfo('Success', 'The melody has been generated as a MIDI file. Please use a compatible MIDI editor/Digital '
                             'Audio Workstation to listen/edit the file.')
 
