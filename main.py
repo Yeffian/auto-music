@@ -48,7 +48,7 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
                 n = note.Rest(quarterLength=length)
             else:
                 # wave contour: move 1–2 steps in current direction
-                step = random.choice([1, 2, 4])
+                step = random.choice([1, 2])
                 if going_up:
                     current_idx = min(current_idx + step, num_scale_notes - 1)
                 else:
@@ -62,7 +62,7 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
 
             m.append(n)
 
-        # End of phrase → add tonic
+        # end on the tonic
         if (bar_num + 1) % phrase_length_bars == 0:
             m.append(note.Note(tonic + str(start_octave), quarterLength=1.0))
 
