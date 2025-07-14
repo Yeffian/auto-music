@@ -4,9 +4,8 @@ import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import ttk
 from markov import RhthymController
-import sys
 
-def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScale,num_bars=8,start_octave=4,octave_range=1,phrase_length_bars=2,bpm=100):
+def produce_melody(tonic='C', scaleType=scale.MajorScale, num_bars=8, start_octave=4, octave_range=1, phrase_length_bars=2, bpm=100):
     sc = scaleType(tonic)
 
     # sort by MIDI value
@@ -38,6 +37,8 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
     current_idx = len(scale_notes) // 2  # start in middle
     going_up = random.choice([True, False])  # first direction in wave
 
+    used_pitches = set()  # to track used pitches
+
     for bar_num in range(num_bars):
         m = stream.Measure(number=bar_num + 1)
         bar_rhythm = beat_chain.generate_bar(start=1, max_beats=4.0)
@@ -55,7 +56,15 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
                 else:
                     current_idx = max(current_idx - step, 0)
 
-                pitch_obj = scale_notes[current_idx]
+                # get a pitch not used yet
+                available_notes = [p for p in scale_notes if p.nameWithOctave not in used_pitches]
+                if not available_notes:
+                    available_notes = scale_notes
+                    used_pitches.clear()
+
+                pitch_obj = random.choice(available_notes)
+                used_pitches.add(pitch_obj.nameWithOctave)
+
                 n = note.Note(pitch_obj.nameWithOctave, quarterLength=length)
 
                 # random direction
@@ -71,7 +80,6 @@ def generate_markov_melody_with_wave_contour(tonic='C',scaleType=scale.MajorScal
 
     melody.show('text')
     melody.show('midi')
-
 
 def ui():
     def btn_callback():
@@ -89,7 +97,7 @@ def ui():
                 scale.PhrygianScale if modality == 'Phrygian' else
                 None
             )
-            generate_markov_melody_with_wave_contour(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars),start_octave=4,octave_range=2,bpm=bpm)
+            produce_melody(tonic=tonic, scaleType=scale_type, phrase_length_bars=int(bars), start_octave=4, octave_range=2, bpm=bpm)
             showinfo('Success', 'The melody has been generated as a MIDI file. Please use a compatible MIDI editor/Digital '
                                 'Audio Workstation to listen/edit the file.')
         except Exception as e:
